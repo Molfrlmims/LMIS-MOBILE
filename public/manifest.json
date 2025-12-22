@@ -1,0 +1,22 @@
+{
+  "name": "LMIS Data Collector",
+  "short_name": "LMIS",
+  "description": "Livestock Management Information System - Data Collection App",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4189DD",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/lmis-logo.webp",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/lmis-logo.webp",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

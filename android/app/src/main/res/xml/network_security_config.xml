@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- For API 24+ (Android 7.0+) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">41.220.118.182</domain>
+    </domain-config>
+    
+    <!-- Fallback for API 23 (Android 6.0) -->
+    <base-config cleartextTrafficPermitted="true"/>
+</network-security-config>
