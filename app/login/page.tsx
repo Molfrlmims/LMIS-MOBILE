@@ -68,7 +68,7 @@ export default function LoginPage() {
               <Smartphone className="w-8 h-8 text-white" />
             </motion.div>
             <CardTitle className="text-2xl font-bold bg-gradient-to-r from-somali-blue to-somali-green bg-clip-text text-transparent">
-              LMIS Data Collector
+              LMIMS Data Collector
             </CardTitle>
             <CardDescription>Sign in to record livestock market data</CardDescription>
           </CardHeader>

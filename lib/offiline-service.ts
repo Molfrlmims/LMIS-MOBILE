@@ -52,6 +52,10 @@ class OfflineService {
   private reportImagesStore!: LocalForage;
 
   constructor() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     this.initStorage();
     this.initNetworkListener();
   }
@@ -94,6 +98,10 @@ class OfflineService {
   }
 
   private setupBrowserNetworkListener() {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      return;
+    }
+
     this.isOnline = navigator.onLine;
 
     window.addEventListener("online", () => {
@@ -108,7 +116,7 @@ class OfflineService {
 
   // Request Queue Management
   async queueRequest(
-    request: Omit<OfflineRequest, "id" | "timestamp" | "retries">
+    request: Omit<OfflineRequest, "id" | "timestamp" | "retries">,
   ): Promise<string> {
     const offlineRequest: OfflineRequest = {
       id: this.generateId(),
@@ -151,7 +159,7 @@ class OfflineService {
       tempId: string;
       file: File;
       description?: string;
-    }>
+    }>,
   ): Promise<string> {
     const storageId = `report_images_${Date.now()}`;
 
@@ -164,7 +172,7 @@ class OfflineService {
           fileName: `item-${img.tempId}.jpg`,
           description: img.description,
         };
-      })
+      }),
     );
 
     const offlineImages: OfflineReportImages = {
@@ -180,21 +188,21 @@ class OfflineService {
 
   // Get stored images for a report
   async getStoredReportImages(
-    storageId: string
+    storageId: string,
   ): Promise<OfflineReportImages | null> {
     return await this.reportImagesStore.getItem(storageId);
   }
 
   // Find stored images by tempIds
   async findStoredImagesByTempIds(
-    tempIds: string[]
+    tempIds: string[],
   ): Promise<OfflineReportImages | null> {
     let foundImages: OfflineReportImages | null = null;
 
     await this.reportImagesStore.iterate((value: OfflineReportImages) => {
       // Check if this storage contains any of the tempIds we're looking for
       const hasMatchingTempIds = value.tempIds.some((tempId) =>
-        tempIds.includes(tempId)
+        tempIds.includes(tempId),
       );
 
       if (
@@ -216,7 +224,7 @@ class OfflineService {
   // Upload images for a synced report
   async uploadImagesForSyncedReport(
     savedReport: any,
-    storedImages: OfflineReportImages
+    storedImages: OfflineReportImages,
   ): Promise<void> {
     if (!storedImages.images.length) return;
 
@@ -225,11 +233,11 @@ class OfflineService {
       .map((storedImage) => {
         // Find the REAL database ID for this tempId
         const dbItem = savedReport.items.find(
-          (item: any) => item.tempId === storedImage.tempId
+          (item: any) => item.tempId === storedImage.tempId,
         );
         if (!dbItem) {
           console.warn(
-            `No database item found for tempId: ${storedImage.tempId}`
+            `No database item found for tempId: ${storedImage.tempId}`,
           );
           return null;
         }
@@ -237,7 +245,7 @@ class OfflineService {
         // Convert base64 to File
         const file = this.base64ToFile(
           storedImage.base64Data,
-          storedImage.fileName
+          storedImage.fileName,
         );
         files.push(file);
 
@@ -256,7 +264,7 @@ class OfflineService {
       }
 
       console.log(
-        `📤 Uploading ${files.length} images for report ${savedReport.id}`
+        `📤 Uploading ${files.length} images for report ${savedReport.id}`,
       );
 
       const uploadResult = await apiClient.uploadImages(token, {
@@ -267,7 +275,7 @@ class OfflineService {
 
       if (uploadResult) {
         console.log(
-          `✅ Successfully uploaded ${files.length} images for report ${savedReport.id}`
+          `✅ Successfully uploaded ${files.length} images for report ${savedReport.id}`,
         );
         // Clean up stored images after successful upload
         await this.removeStoredReportImages(storedImages.id);
@@ -285,7 +293,7 @@ class OfflineService {
   async storeImage(
     file: File,
     itemId: number,
-    requestId?: string
+    requestId?: string,
   ): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -452,7 +460,7 @@ class OfflineService {
 
     if (storedImages) {
       console.log(
-        `📸 Found ${storedImages.images.length} stored images for report ${savedReport.id}`
+        `📸 Found ${storedImages.images.length} stored images for report ${savedReport.id}`,
       );
       await this.uploadImagesForSyncedReport(savedReport, storedImages);
     } else {
@@ -478,7 +486,7 @@ class OfflineService {
       if (storedImage) {
         const file = this.base64ToFile(
           storedImage.base64Data,
-          storedImage.fileName
+          storedImage.fileName,
         );
         formData.append(`image_${imageData[i].itemId}`, file);
         await this.removeStoredImage(imageKey);
@@ -503,7 +511,7 @@ class OfflineService {
           Authorization: request.headers.Authorization || "",
         },
         body: formData,
-      }
+      },
     );
 
     if (!response.ok) {

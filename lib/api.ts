@@ -1,7 +1,7 @@
 import { CapacitorHttp } from "@capacitor/core";
 import { offlineService } from "./offiline-service";
 
-const API_BASE_URL = "http://13.50.108.254:3000";
+const API_BASE_URL = "http://13.61.134.214:3000";
 
 // =============== TYPE DEFINITIONS ===============
 export interface User {
