@@ -120,7 +120,7 @@ export class ApiClient {
       body?: any;
       params?: Record<string, string>;
       skipJsonContentType?: boolean;
-    } = {}
+    } = {},
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     const {
@@ -157,7 +157,7 @@ export class ApiClient {
         throw new ApiError(
           response.data?.message || `HTTP error! status: ${response.status}`,
           response.status,
-          response.data
+          response.data,
         );
       }
 
@@ -179,7 +179,7 @@ export class ApiClient {
       params?: Record<string, string>;
       skipJsonContentType?: boolean;
       offlineable?: boolean;
-    } = {}
+    } = {},
   ): Promise<T> {
     const {
       method = "GET",
@@ -190,9 +190,15 @@ export class ApiClient {
       offlineable = false,
     } = options;
 
-    console.log("API Request:", { endpoint, method, body, params, offlineable });
-    console.log('is online' , offlineService.getOnlineStatus())
-     if (offlineable && !offlineService.getOnlineStatus()) {
+    console.log("API Request:", {
+      endpoint,
+      method,
+      body,
+      params,
+      offlineable,
+    });
+    console.log("is online", offlineService.getOnlineStatus());
+    if (offlineable && !offlineService.getOnlineStatus()) {
       return this.handleOfflineRequest(endpoint, options) as Promise<T>;
     }
 
@@ -205,7 +211,7 @@ export class ApiClient {
       method?: string;
       headers?: Record<string, string>;
       body?: any;
-    }
+    },
   ): Promise<any> {
     const { method = "GET", headers = {}, body } = options;
 
@@ -264,11 +270,10 @@ export class ApiClient {
   isOnline(): boolean {
     return offlineService.getOnlineStatus();
   }
-
   // =============== IMAGE UPLOAD WITH ===============
   async uploadImages(
     token: string,
-    uploadData: ImageUploadData
+    uploadData: ImageUploadData,
   ): Promise<{
     success: boolean;
     urls?: string[];
@@ -291,23 +296,20 @@ export class ApiClient {
     });
 
     try {
-      const response = await fetch(
-        `https://ats-system-two.vercel.app/api/upload`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${this.baseUrl}/price-reports/images`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new ApiError(
           errorData?.message || `HTTP error! status: ${response.status}`,
           response.status,
-          errorData
+          errorData,
         );
       }
 
@@ -347,7 +349,7 @@ export class ApiClient {
             Authorization: `Bearer ${token}`,
           },
           offlineable: false,
-        }
+        },
       );
 
       if (data) {
@@ -366,7 +368,7 @@ export class ApiClient {
 
   async getReports(
     token: string,
-    params?: Record<string, string>
+    params?: Record<string, string>,
   ): Promise<PriceReport[]> {
     return this.request<PriceReport[]>("/price-reports", {
       headers: {
@@ -388,7 +390,7 @@ export class ApiClient {
 
   async createReport(
     token: string,
-    reportData: Partial<PriceReport>
+    reportData: Partial<PriceReport>,
   ): Promise<PriceReport> {
     return this.request<PriceReport>("/price-reports", {
       method: "POST",
@@ -404,7 +406,7 @@ export class ApiClient {
   async updateReport(
     token: string,
     reportId: number,
-    reportData: Partial<PriceReport>
+    reportData: Partial<PriceReport>,
   ): Promise<PriceReport> {
     return this.request<PriceReport>(`/price-reports/${reportId}`, {
       method: "PATCH",
@@ -418,7 +420,7 @@ export class ApiClient {
 
   async deleteReport(
     token: string,
-    reportId: number
+    reportId: number,
   ): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(`/price-reports/${reportId}`, {
       method: "DELETE",
@@ -440,7 +442,7 @@ export class ApiClient {
       price: number;
       currency: string;
       countryId?: number;
-    }
+    },
   ): Promise<ReportItem> {
     return this.request<ReportItem>(`/price-reports/${reportId}/items`, {
       method: "POST",
@@ -456,7 +458,7 @@ export class ApiClient {
     token: string,
     reportId: number,
     itemId: number,
-    itemData: Partial<ReportItem>
+    itemData: Partial<ReportItem>,
   ): Promise<ReportItem> {
     return this.request<ReportItem>(
       `/price-reports/${reportId}/items/${itemId}`,
@@ -467,14 +469,14 @@ export class ApiClient {
         },
         body: itemData,
         offlineable: true,
-      }
+      },
     );
   }
 
   async deleteReportItem(
     token: string,
     reportId: number,
-    itemId: number
+    itemId: number,
   ): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(
       `/price-reports/${reportId}/items/${itemId}`,
@@ -484,7 +486,7 @@ export class ApiClient {
           Authorization: `Bearer ${token}`,
         },
         offlineable: true,
-      }
+      },
     );
   }
 
@@ -500,7 +502,7 @@ export class ApiClient {
 
   async markNotificationAsRead(
     token: string,
-    notificationId: number
+    notificationId: number,
   ): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>(
       `/notifications/${notificationId}/read`,
@@ -510,7 +512,7 @@ export class ApiClient {
           Authorization: `Bearer ${token}`,
         },
         offlineable: true,
-      }
+      },
     );
   }
 
@@ -526,7 +528,7 @@ export class ApiClient {
 
   async getRecentActivity(
     token: string,
-    limit: number = 10
+    limit: number = 10,
   ): Promise<RecentActivity[]> {
     return this.request<RecentActivity[]>("/dashboard/recent-activity", {
       headers: {
@@ -549,7 +551,7 @@ export class ApiClient {
 
   async updateAppSettings(
     token: string,
-    settings: any
+    settings: any,
   ): Promise<{ success: boolean }> {
     return this.request<{ success: boolean }>("/settings", {
       method: "PUT",
@@ -586,7 +588,11 @@ export class ApiClient {
 }
 
 export class ApiError extends Error {
-  constructor(message: string, public status: number, public data?: any) {
+  constructor(
+    message: string,
+    public status: number,
+    public data?: any,
+  ) {
     super(message);
     this.name = "ApiError";
   }

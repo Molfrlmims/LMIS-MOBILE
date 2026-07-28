@@ -5,17 +5,13 @@ import { useEffect } from "react";
 
 export function OfflineProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
-    const initialize = async () => {
-      const interval = setInterval(() => {
-        if (offlineService.getOnlineStatus()) {
-          offlineService.syncPendingRequests();
-        }
-      }, 30000);
+    const interval = setInterval(() => {
+      if (offlineService.getOnlineStatus()) {
+        void offlineService.syncPendingRequests();
+      }
+    }, 30000);
 
-      return () => clearInterval(interval);
-    };
-
-    initialize();
+    return () => clearInterval(interval);
   }, []);
 
   return <>{children}</>;

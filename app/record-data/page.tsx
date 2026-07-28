@@ -146,7 +146,7 @@ interface FormErrors {
 
 export default function RecordDataPage() {
   const [referenceData, setReferenceData] = useState<ReferenceData | null>(
-    null
+    null,
   );
   const [selectedMarket, setSelectedMarket] = useState<number | null>(null);
   const [reportDate, setReportDate] = useState("");
@@ -216,7 +216,7 @@ export default function RecordDataPage() {
       });
 
       const itemsWithoutImages = items.filter(
-        (item) => !capturedImages.some((img) => img.tempId === item.tempId)
+        (item) => !capturedImages.some((img) => img.tempId === item.tempId),
       );
 
       if (itemsWithoutImages.length > 0) {
@@ -337,7 +337,7 @@ export default function RecordDataPage() {
     const itemToRemove = items[index];
     setItems(items.filter((_, i) => i !== index));
     setCapturedImages((prev) =>
-      prev.filter((img) => img.tempId !== itemToRemove.tempId)
+      prev.filter((img) => img.tempId !== itemToRemove.tempId),
     );
 
     setFormErrors((prev) => {
@@ -429,10 +429,12 @@ export default function RecordDataPage() {
 
       const savedReport = await apiClient.createReport(token, createReportData);
       console.log("saved report  offline ??", savedReport.offline);
-      toast({
-        title: "Report queued for submission when online  ",
-      });
+
       if (savedReport.offline) {
+        toast({
+          title: "Report queued for submission when online",
+        });
+
         if (capturedImages.length > 0) {
           // Store images with tempIds for later sync
           console.log("storing images offline");
@@ -441,9 +443,10 @@ export default function RecordDataPage() {
               tempId: img.tempId,
               file: img.file,
               description: img.description,
-            }))
+            })),
           );
         }
+
         toast({
           title: "Images queued for upload when online",
         });
@@ -474,7 +477,7 @@ export default function RecordDataPage() {
           })
           .filter(
             (meta): meta is { itemId: number; description: string } =>
-              meta !== null
+              meta !== null,
           );
 
         const files = capturedImages.map((capturedImage) => capturedImage.file);
@@ -487,9 +490,9 @@ export default function RecordDataPage() {
 
         if (uploadResult.offline) {
           toast({
-            title: "Report submitted, images queued",
+            title: "Queueing images for upload when online",
             description:
-              "Your report was submitted but images will upload when online",
+              "Your images will be uploaded automatically once you are back online.",
           });
         } else {
           toast({
@@ -499,8 +502,7 @@ export default function RecordDataPage() {
         }
       } else {
         toast({
-          title: "Success",
-          description: "Report submitted successfully",
+          title: "Report submitted successfully",
         });
       }
 
@@ -642,7 +644,7 @@ export default function RecordDataPage() {
               <AnimatePresence>
                 {items.map((item, index) => {
                   const itemImage = capturedImages.find(
-                    (img) => img.tempId === item.tempId
+                    (img) => img.tempId === item.tempId,
                   );
                   const itemError = formErrors.itemErrors?.[index];
 
@@ -716,14 +718,14 @@ export default function RecordDataPage() {
                               updateItem(
                                 index,
                                 "speciesId",
-                                Number.parseInt(value)
+                                Number.parseInt(value),
                               )
                             }
                           >
                             <SelectTrigger
                               className={cn(
                                 "h-9",
-                                itemError?.speciesId ? "border-red-500" : ""
+                                itemError?.speciesId ? "border-red-500" : "",
                               )}
                             >
                               <SelectValue />
@@ -737,7 +739,7 @@ export default function RecordDataPage() {
                                   >
                                     {species.name}
                                   </SelectItem>
-                                )
+                                ),
                               )}
                             </SelectContent>
                           </Select>
@@ -756,14 +758,14 @@ export default function RecordDataPage() {
                               updateItem(
                                 index,
                                 "gradeId",
-                                Number.parseInt(value)
+                                Number.parseInt(value),
                               )
                             }
                           >
                             <SelectTrigger
                               className={cn(
                                 "h-9",
-                                itemError?.gradeId ? "border-red-500" : ""
+                                itemError?.gradeId ? "border-red-500" : "",
                               )}
                             >
                               <SelectValue />
@@ -801,7 +803,7 @@ export default function RecordDataPage() {
                             <SelectTrigger
                               className={cn(
                                 "h-9",
-                                itemError?.gender ? "border-red-500" : ""
+                                itemError?.gender ? "border-red-500" : "",
                               )}
                             >
                               <SelectValue />
@@ -827,12 +829,12 @@ export default function RecordDataPage() {
                               updateItem(
                                 index,
                                 "price",
-                                Number.parseFloat(e.target.value) || 0
+                                Number.parseFloat(e.target.value) || 0,
                               )
                             }
                             className={cn(
                               "h-9",
-                              itemError?.price ? "border-red-500" : ""
+                              itemError?.price ? "border-red-500" : "",
                             )}
                             min="0"
                             step="0.01"
@@ -853,7 +855,7 @@ export default function RecordDataPage() {
                             }
                             className={cn(
                               "h-9",
-                              itemError?.currency ? "border-red-500" : ""
+                              itemError?.currency ? "border-red-500" : "",
                             )}
                           />
                           {itemError?.currency && (
@@ -873,12 +875,12 @@ export default function RecordDataPage() {
                                 "quantity",
                                 e.target.value
                                   ? Number.parseInt(e.target.value)
-                                  : undefined
+                                  : undefined,
                               )
                             }
                             className={cn(
                               "h-9",
-                              itemError?.quantity ? "border-red-500" : ""
+                              itemError?.quantity ? "border-red-500" : "",
                             )}
                             min="0"
                             step="1"
@@ -892,7 +894,7 @@ export default function RecordDataPage() {
                       </div>
 
                       {referenceData?.userWithRelations.markets.find(
-                        (market) => market.id === selectedMarket
+                        (market) => market.id === selectedMarket,
                       )?.marketType === "export" && (
                         <motion.div
                           className="w-full border rounded-lg"
@@ -915,7 +917,7 @@ export default function RecordDataPage() {
                                       updateItem(
                                         index,
                                         "countryId",
-                                        country.id
+                                        country.id,
                                       );
                                     }}
                                   >
@@ -930,7 +932,7 @@ export default function RecordDataPage() {
                                         "ml-auto h-4 w-4",
                                         selected?.[index]?.name === country.name
                                           ? "opacity-100"
-                                          : "opacity-0"
+                                          : "opacity-0",
                                       )}
                                     />
                                   </CommandItem>

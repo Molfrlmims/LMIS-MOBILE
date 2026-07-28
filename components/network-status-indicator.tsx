@@ -1,30 +1,38 @@
- // Alternative: Minimal version without numbers
+// Alternative: Minimal version without numbers
 "use client";
 
 import { useNetworkStatus } from "@/hooks/use-network-status";
 import { useOfflineQueue } from "@/hooks/use-offline-queue";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "./ui/use-toast";
-import { Wifi, WifiOff, Cloud, CloudOff, RefreshCw } from "lucide-react";
+import { Wifi, WifiOff, RefreshCw } from "lucide-react";
 
 export function NetworkStatusIndicator() {
   const { isOnline, isSyncing } = useNetworkStatus();
   const { pendingRequests } = useOfflineQueue();
   const [showBadge, setShowBadge] = useState(false);
+  const previousOnlineStatus = useRef<boolean | null>(null);
 
   useEffect(() => {
-    if (!isOnline) {
+    if (previousOnlineStatus.current === null) {
+      previousOnlineStatus.current = isOnline;
+      return;
+    }
+
+    if (previousOnlineStatus.current && !isOnline) {
       toast({
         title: "You are offline. Changes will be saved locally",
       });
-    } else {
-      if (pendingRequests > 0) {
-        toast({
-          title: "Back online! Syncing your data...",
-        });
-      }
     }
+
+    if (!previousOnlineStatus.current && isOnline && pendingRequests > 0) {
+      toast({
+        title: "Back online! Syncing your data...",
+      });
+    }
+
+    previousOnlineStatus.current = isOnline;
   }, [isOnline, pendingRequests]);
 
   // Badge animation for pending requests
@@ -32,7 +40,7 @@ export function NetworkStatusIndicator() {
     if (pendingRequests > 0) {
       setShowBadge(true);
       const interval = setInterval(() => {
-        setShowBadge(prev => !prev);
+        setShowBadge((prev) => !prev);
       }, 1000);
       return () => clearInterval(interval);
     } else {

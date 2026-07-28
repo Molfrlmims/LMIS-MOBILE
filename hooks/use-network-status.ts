@@ -1,31 +1,36 @@
-  import { offlineService } from "@/lib/offiline-service";
+import { offlineService } from "@/lib/offiline-service";
 import { useState, useEffect } from "react";
- export function useNetworkStatus() {
-   const [isOnline, setIsOnline] = useState(offlineService.getOnlineStatus());
-   const [isSyncing, setIsSyncing] = useState(offlineService.isSyncing());
 
-   useEffect(() => {
-     const checkStatus = () => {
-       setIsOnline(offlineService.getOnlineStatus());
-       setIsSyncing(offlineService.isSyncing());
-     };
+export function useNetworkStatus() {
+  const [isOnline, setIsOnline] = useState(offlineService.getOnlineStatus());
+  const [isSyncing, setIsSyncing] = useState(offlineService.isSyncing());
 
-     checkStatus();
+  useEffect(() => {
+    const checkStatus = () => {
+      setIsOnline(offlineService.getOnlineStatus());
+      setIsSyncing(offlineService.isSyncing());
+    };
 
-     offlineService.onSyncComplete(() => {
-       setIsSyncing(false);
-     });
+    checkStatus();
 
-     if (typeof window !== "undefined") {
-       window.addEventListener("online", checkStatus);
-       window.addEventListener("offline", checkStatus);
+    const unsubscribeNetwork =
+      offlineService.onNetworkStatusChange(setIsOnline);
+    const unsubscribeSync = offlineService.onSyncStatusChange(setIsSyncing);
 
-       return () => {
-         window.removeEventListener("online", checkStatus);
-         window.removeEventListener("offline", checkStatus);
-       };
-     }
-   }, []);
+    if (typeof window !== "undefined") {
+      window.addEventListener("online", checkStatus);
+      window.addEventListener("offline", checkStatus);
+    }
 
-   return { isOnline, isSyncing };
- }
+    return () => {
+      unsubscribeNetwork();
+      unsubscribeSync();
+      if (typeof window !== "undefined") {
+        window.removeEventListener("online", checkStatus);
+        window.removeEventListener("offline", checkStatus);
+      }
+    };
+  }, []);
+
+  return { isOnline, isSyncing };
+}

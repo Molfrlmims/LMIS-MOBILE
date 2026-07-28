@@ -45,6 +45,9 @@ class OfflineService {
   private isOnline = true;
   private syncInProgress = false;
   private syncCallbacks: Array<() => void> = [];
+  private networkStatusCallbacks: Array<(isOnline: boolean) => void> = [];
+  private syncStatusCallbacks: Array<(isSyncing: boolean) => void> = [];
+  private queueChangeCallbacks: Array<(pendingRequests: number) => void> = [];
 
   // Store instances
   private queueStore!: LocalForage;
@@ -83,13 +86,10 @@ class OfflineService {
   private async initNetworkListener() {
     try {
       const status = await Network.getStatus();
-      this.isOnline = status.connected;
+      this.setOnlineStatus(status.connected);
 
       Network.addListener("networkStatusChange", (status) => {
-        this.isOnline = status.connected;
-        if (this.isOnline) {
-          this.syncPendingRequests();
-        }
+        this.setOnlineStatus(status.connected);
       });
     } catch (error) {
       console.warn("Network plugin not available, using browser API");
@@ -102,16 +102,28 @@ class OfflineService {
       return;
     }
 
-    this.isOnline = navigator.onLine;
+    this.setOnlineStatus(navigator.onLine);
 
     window.addEventListener("online", () => {
-      this.isOnline = true;
-      this.syncPendingRequests();
+      this.setOnlineStatus(true);
     });
 
     window.addEventListener("offline", () => {
-      this.isOnline = false;
+      this.setOnlineStatus(false);
     });
+  }
+
+  private setOnlineStatus(isOnline: boolean) {
+    const statusChanged = this.isOnline !== isOnline;
+    this.isOnline = isOnline;
+
+    if (statusChanged) {
+      this.notifyNetworkStatusChange();
+    }
+
+    if (this.isOnline) {
+      void this.syncPendingRequests();
+    }
   }
 
   // Request Queue Management
@@ -126,6 +138,7 @@ class OfflineService {
     };
 
     await this.queueStore.setItem(offlineRequest.id, offlineRequest);
+    void this.notifyQueueChange();
     return offlineRequest.id;
   }
 
@@ -139,6 +152,7 @@ class OfflineService {
 
   async removeRequest(id: string): Promise<void> {
     await this.queueStore.removeItem(id);
+    void this.notifyQueueChange();
   }
 
   async updateRequestRetry(id: string, retries: number): Promise<void> {
@@ -146,11 +160,13 @@ class OfflineService {
     if (request) {
       request.retries = retries;
       await this.queueStore.setItem(id, request);
+      void this.notifyQueueChange();
     }
   }
 
   async clearAllRequests(): Promise<void> {
     await this.queueStore.clear();
+    void this.notifyQueueChange();
   }
 
   // Store images for offline report (with tempIds)
@@ -346,6 +362,7 @@ class OfflineService {
     if (this.syncInProgress) return;
 
     this.syncInProgress = true;
+    this.notifySyncStatusChange();
 
     try {
       // Get initial batch
@@ -406,10 +423,11 @@ class OfflineService {
           requests = requests.slice(1);
         }
       }
-
-      this.notifySyncComplete();
     } finally {
       this.syncInProgress = false;
+      this.notifySyncStatusChange();
+      this.notifySyncComplete();
+      void this.notifyQueueChange();
     }
   }
 
@@ -551,12 +569,57 @@ class OfflineService {
   }
 
   // Callback system for UI updates
-  onSyncComplete(callback: () => void): void {
+  onSyncComplete(callback: () => void): () => void {
     this.syncCallbacks.push(callback);
+    return () => {
+      this.syncCallbacks = this.syncCallbacks.filter((cb) => cb !== callback);
+    };
+  }
+
+  onNetworkStatusChange(callback: (isOnline: boolean) => void): () => void {
+    this.networkStatusCallbacks.push(callback);
+    return () => {
+      this.networkStatusCallbacks = this.networkStatusCallbacks.filter(
+        (cb) => cb !== callback,
+      );
+    };
+  }
+
+  onSyncStatusChange(callback: (isSyncing: boolean) => void): () => void {
+    this.syncStatusCallbacks.push(callback);
+    return () => {
+      this.syncStatusCallbacks = this.syncStatusCallbacks.filter(
+        (cb) => cb !== callback,
+      );
+    };
+  }
+
+  onQueueChange(callback: (pendingRequests: number) => void): () => void {
+    this.queueChangeCallbacks.push(callback);
+    return () => {
+      this.queueChangeCallbacks = this.queueChangeCallbacks.filter(
+        (cb) => cb !== callback,
+      );
+    };
   }
 
   private notifySyncComplete(): void {
     this.syncCallbacks.forEach((callback) => callback());
+  }
+
+  private notifyNetworkStatusChange(): void {
+    this.networkStatusCallbacks.forEach((callback) => callback(this.isOnline));
+  }
+
+  private notifySyncStatusChange(): void {
+    this.syncStatusCallbacks.forEach((callback) =>
+      callback(this.syncInProgress),
+    );
+  }
+
+  private async notifyQueueChange(): Promise<void> {
+    const requests = await this.getPendingRequests();
+    this.queueChangeCallbacks.forEach((callback) => callback(requests.length));
   }
 
   getOnlineStatus(): boolean {

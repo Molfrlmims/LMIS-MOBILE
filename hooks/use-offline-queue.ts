@@ -1,9 +1,11 @@
- import { offlineService } from "@/lib/offiline-service";
+import { offlineService } from "@/lib/offiline-service";
 import { useState, useEffect } from "react";
 
 export function useOfflineQueue() {
   const [pendingRequests, setPendingRequests] = useState(0);
   const [lastSync, setLastSync] = useState<Date | null>(null);
+  const [isSyncing, setIsSyncing] = useState(offlineService.isSyncing());
+  const [isOnline, setIsOnline] = useState(offlineService.getOnlineStatus());
 
   useEffect(() => {
     const updateQueueStatus = async () => {
@@ -13,28 +15,28 @@ export function useOfflineQueue() {
 
     updateQueueStatus();
 
-    const syncCallback = () => {
+    const unsubscribeQueue = offlineService.onQueueChange(setPendingRequests);
+    const unsubscribeSyncStatus =
+      offlineService.onSyncStatusChange(setIsSyncing);
+    const unsubscribeNetworkStatus =
+      offlineService.onNetworkStatusChange(setIsOnline);
+    const unsubscribeSyncComplete = offlineService.onSyncComplete(() => {
       setLastSync(new Date());
-      updateQueueStatus();
-    };
-
-    offlineService.onSyncComplete(syncCallback);
-
-    const interval = setInterval(() => {
-      if (offlineService.getOnlineStatus()) {
-        updateQueueStatus();
-      }
-    }, 5000);
+      void updateQueueStatus();
+    });
 
     return () => {
-      clearInterval(interval);
+      unsubscribeQueue();
+      unsubscribeSyncStatus();
+      unsubscribeNetworkStatus();
+      unsubscribeSyncComplete();
     };
   }, []);
 
   return {
     pendingRequests,
     lastSync,
-    isSyncing: offlineService.isSyncing(),
-    isOnline: offlineService.getOnlineStatus(),
+    isSyncing,
+    isOnline,
   };
 }
